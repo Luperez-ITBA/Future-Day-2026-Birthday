@@ -34,11 +34,35 @@ st.markdown("""
     .stButton > button {
         cursor: pointer !important;
     }
+    
+    /* Botón de navegación al Hub */
+    .btn-nav {
+        display: block;
+        width: 100%;
+        padding: 12px 0;
+        background-color: #001f3f;
+        color: #ffffff !important;
+        text-align: center;
+        border-radius: 10px;
+        text-decoration: none !important;
+        font-weight: 600;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-top: 30px;
+    }
+    .btn-nav:hover, .btn-nav:visited, .btn-nav:active {
+        text-decoration: none !important;
+        color: white !important;
+    }
+    .btn-nav:hover {
+        background-color: #0074D9;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 
-# --- CABECERA Y CONTROLES (Reemplaza a la sidebar) ---
+# --- CABECERA Y CONTROLES ---
 col_logo, col_titulo, col_reinicio = st.columns([1, 3, 1])
 
 with col_logo:
@@ -70,7 +94,6 @@ with tab1:
     if not st.session_state.hay_coincidencia:
         st.markdown("Invitá a los participantes a registrar su cumpleaños:")
         
-        # ACA ESTÁ EL SELECTBOX PARA LOS DÍAS
         col_sel1, col_sel2 = st.columns(2)
         with col_sel1:
             dia_elegido = st.selectbox("Día:", list(range(1, 32)))
@@ -99,7 +122,6 @@ with tab1:
             st.session_state.ultima_coincidencia = None
             st.rerun()
             
-    # Muestra los cumples ingresados
     if len(st.session_state.cumples_registrados) > 0:
         st.write("---")
         st.write(f"**Registros actuales ({len(st.session_state.cumples_registrados)} personas):**")
@@ -123,11 +145,9 @@ with tab2:
     
     if st.button(f"🎲 Simular {iteraciones} habitaciones con {cant_personas} personas"):
         coincidencias_simuladas = 0
-        
         progress_bar = st.progress(0)
         
         for i in range(iteraciones):
-            # Asumimos año no bisiesto de 365 días
             cumples_random = np.random.randint(1, 366, size=cant_personas)
             if len(cumples_random) != len(set(cumples_random)):
                 coincidencias_simuladas += 1
@@ -136,34 +156,44 @@ with tab2:
                 progress_bar.progress(i / iteraciones)
                 
         progress_bar.progress(1.0)
-        
         prob_empirica = coincidencias_simuladas / iteraciones
         
-        st.success(f"En {coincidencias_simuladas} de las {iteraciones} habitaciones hubo al menos una coincidencia.")
-        st.metric(f"Probabilidad Estimada (Simulación)", f"{prob_empirica*100:.1f}%")
+        # --- NUEVO DISEÑO CENTRADO Y ULTRA VISIBLE ---
+        st.write("")
+        col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+        with col_m2:
+            st.markdown(f"""
+            <div style="background-color: #e2e8f0; border-radius: 15px; padding: 25px; text-align: center; border-left: 8px solid #2ecc71; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 600;">Resultado de la Simulación</p>
+                <p style="margin: 8px 0; font-size: 58px; color: #2ecc71; font-weight: 800; line-height: 1;">{prob_empirica*100:.1f}%</p>
+                <p style="margin: 0; font-size: 15px; color: #64748b;">Hubo al menos una coincidencia en <b>{coincidencias_simuladas}</b> de las <b>{iteraciones}</b> habitaciones virtuales.</p>
+            </div>
+            """, unsafe_allow_html=True)
+        st.write("")
         
-        # Gráfico estático general
-        fig, ax = plt.subplots(figsize=(10, 4))
-        n_vals = np.arange(1, 76)
-        # Fórmula teórica
-        prob_teorica = 1 - np.exp(-n_vals * (n_vals - 1) / (2 * 365))
-        
-        ax.plot(n_vals, prob_teorica * 100, color='#0074D9', linewidth=2.5, label="Probabilidad Teórica")
-        ax.axhline(50, color='#e74c3c', linestyle='--', alpha=0.7, label="50% (n=23)")
-        ax.axvline(23, color='#e74c3c', linestyle='--', alpha=0.7)
-        ax.axhline(99, color='#2ecc71', linestyle='--', alpha=0.7, label="99% (n=57)")
-        ax.axvline(57, color='#2ecc71', linestyle='--', alpha=0.7)
-        ax.scatter([23, 57], [50, 99], color='black', zorder=5)
-        ax.annotate('n=23', xy=(24, 40), fontsize=10)
-        ax.annotate('n=57', xy=(58, 85), fontsize=10)
-        
-        ax.set_title("Probabilidad Teórica vs Tamaño del Grupo")
-        ax.set_xlabel("Número de Personas en la Habitación")
-        ax.set_ylabel("Probabilidad de Coincidencia (%)")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-        
-        st.pyplot(fig)
+        # --- GRÁFICO TEÓRICO MÁS COMPACTO E ILUSTRATIVO ---
+        st.markdown("<p style='text-align: center; color: #64748b; font-size: 14px; margin-bottom: -10px;'>Curva de probabilidad teórica de referencia:</p>", unsafe_allow_html=True)
+        col_graph1, col_graph2, col_graph3 = st.columns([1.5, 3, 1.5])
+        with col_graph2:
+            fig, ax = plt.subplots(figsize=(6, 2.8))
+            n_vals = np.arange(1, 76)
+            prob_teorica = 1 - np.exp(-n_vals * (n_vals - 1) / (2 * 365))
+            
+            ax.plot(n_vals, prob_teorica * 100, color='#0074D9', linewidth=2, label="Curva Teórica")
+            ax.axhline(50, color='#e74c3c', linestyle='--', alpha=0.5, linewidth=1)
+            ax.axvline(23, color='#e74c3c', linestyle='--', alpha=0.5, linewidth=1)
+            
+            # Resaltar el punto que seleccionó el usuario en el slider
+            prob_actual_teorica = (1 - np.exp(-cant_personas * (cant_personas - 1) / (2 * 365))) * 100
+            ax.scatter([cant_personas], [prob_actual_teorica], color='#2ecc71', s=35, zorder=5, label=f"Tu grupo (n={cant_personas})")
+            
+            ax.set_xlabel("Personas en el grupo", fontsize=8)
+            ax.set_ylabel("Probabilidad (%)", fontsize=8)
+            ax.tick_params(axis='both', which='major', labelsize=7)
+            ax.grid(True, alpha=0.2)
+            ax.legend(fontsize=7, loc="lower right")
+            
+            st.pyplot(fig, use_container_width=True)
 
 
 # --- TAB 3: ¿POR QUÉ SUCEDE? (MATEMÁTICA) ---
@@ -195,3 +225,9 @@ with tab3:
     st.markdown("""
     ¡Estás haciendo 253 comparaciones simultáneas! Con 253 cruces posibles y 365 días disponibles, tiene mucho más sentido que la probabilidad cruce el 50%.
     """)
+
+# --- BOTÓN DE RETORNO AL HUB ---
+st.write("---")
+col_vacia1, col_boton_regreso, col_vacia2 = st.columns([1, 1, 1])
+with col_boton_regreso:
+    st.markdown('<a href="https://future-day-2026-hub.streamlit.app/" target="_blank" class="btn-nav">🔙 Volver al Hub Principal</a>', unsafe_allow_html=True)
